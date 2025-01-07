@@ -24,11 +24,8 @@ jobs:
     - name: Build f1c-du
       run: go build -o f1c-du -v cmd/du/main.go
 
-    - name: Test f1c-du
-      run: go test -v cmd/du/main.go
-
     - name: Build f1c-cu
       run: go build -o f1c-cu -v cmd/cu/main.go
 
-    - name: Test f1c-cu
-      run: go test -v cmd/cu/main.go
+    - name: Test 
+      run: go test -v ./...
