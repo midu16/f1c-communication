@@ -1,34 +1,40 @@
-# Use an official Go image as the base
-FROM golang:1.20-alpine as builder
+# Stage 1: Build the Go application
+FROM golang:1.19-alpine AS builder
 
-# Set up the working directory
+# Set the working directory inside the container
 WORKDIR /app
 
 # Copy the source code into the container
-COPY . .
+COPY go.mod go.sum ./
 
-# Install dependencies and build the Go application
-RUN go mod tidy && go build -o f1c-communication .
+# Download dependencies
+RUN go mod tidy
 
-# Use a minimal base image for the final container
+# Copy the entire project source into the container
+COPY ../* .
+
+# Build the Go binary
+RUN go build -o f1c-communication .
+
+# Stage 2: Create the final image
 FROM alpine:latest
 
-# Set up necessary system dependencies
+# Install required dependencies (e.g., certificates)
 RUN apk --no-cache add ca-certificates
 
-# Set the working directory
+# Set the working directory for the application
 WORKDIR /app
 
-# Copy the built Go binary from the builder stage
+# Copy the binary from the builder stage
 COPY --from=builder /app/f1c-communication /app/
 
-# Set the default environment variable to specify the component
+# Set default environment variable for running either DU or CU
 ENV COMPONENT=du
 
-# Expose the port the DU server will listen on
+# Expose the necessary port for the DU server
 EXPOSE 38473
 
-# Command to run when the container starts
+# Command to run the application
 CMD if [ "$COMPONENT" = "du" ]; then \
         ./f1c-communication cmd/du/main.go; \
     elif [ "$COMPONENT" = "cu" ]; then \
