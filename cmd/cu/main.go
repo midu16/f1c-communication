@@ -1,21 +1,17 @@
 package main
 
 import (
-	"f1c-communication/pkg/f1c"
+	"f1c-communication/pkg/f1ap"
 	"flag"
 	"log"
 )
 
 func main() {
-	// Define a command-line flag for the server address
-	serverAddress := flag.String("server", "localhost:38473", "F1-C server address (e.g., 192.168.1.100:38473)")
+	serverAddress := flag.String("server", "127.0.0.1:38473", "SCTP server address")
 	flag.Parse()
 
-	// Log the chosen server address
-	log.Printf("Starting CU client, connecting to server at %s...\n", *serverAddress)
-
-	// Start the client
-	if err := f1c.StartClient(*serverAddress); err != nil {
-		log.Fatalf("Failed to start CU client: %v", err)
+	log.Printf("Connecting to SCTP server at %s...\n", *serverAddress)
+	if err := f1ap.StartClient(*serverAddress); err != nil {
+		log.Fatalf("Failed to connect to server: %v", err)
 	}
 }

@@ -1,59 +1,63 @@
 package f1c
 
 import (
-	"bufio"
-	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net"
+
+	"github.com/ishidawataru/sctp"
 )
 
-// StartServer initializes the DU server and listens for incoming connections.
-func StartServer(address string) error {
-	listener, err := net.Listen("tcp", address)
+func StartServer(port string) {
+	addr := &sctp.SCTPAddr{
+		IPAddrs: []net.IPAddr{{IP: net.ParseIP("0.0.0.0")}},
+		Port:    parsePort(port),
+	}
+
+	listener, err := sctp.ListenSCTP("sctp", addr)
 	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
+		log.Fatalf("Failed to start SCTP server: %v", err)
 	}
 	defer listener.Close()
 
-	fmt.Printf("DU Server listening on %s\n", address)
+	fmt.Printf("SCTP server listening on port %s\n", port)
 
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Printf("Error accepting connection: %v\n", err)
+			log.Printf("Failed to accept connection: %v", err)
 			continue
 		}
-		go handleConnection(conn)
+
+		go handleConnection(conn.(*sctp.SCTPConn))
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn *sctp.SCTPConn) {
 	defer conn.Close()
-	fmt.Printf("Client connected: %s\n", conn.RemoteAddr())
 
-	reader := bufio.NewReader(conn)
+	buf := make([]byte, 1024)
 	for {
-		// Read the incoming message
-		message, err := reader.ReadString('\n')
+		n, err := conn.Read(buf)
 		if err != nil {
-			fmt.Printf("Connection closed by client: %v\n", err)
-			return
+			// Handle EOF gracefully
+			if err == io.EOF {
+				log.Printf("Connection closed by client")
+				break
+			}
+
+			log.Printf("Error reading from connection: %v", err)
+			break
 		}
 
-		// Decode the F1-C message
-		var f1cMessage F1CMessage
-		if err := json.Unmarshal([]byte(message), &f1cMessage); err != nil {
-			fmt.Printf("Error decoding message: %v\n", err)
-			continue
-		}
-		fmt.Printf("Received message: %+v\n", f1cMessage)
+		fmt.Printf("Received: %s\n", string(buf[:n]))
 
 		// Respond to the client
-		response := F1CMessage{
-			MessageType: "Response",
-			Payload:     "Acknowledged: " + f1cMessage.Payload,
+		_, err = conn.Write([]byte("Acknowledged"))
+		if err != nil {
+			log.Printf("Error writing to connection: %v", err)
+			break
 		}
-		responseBytes, _ := json.Marshal(response)
-		conn.Write(append(responseBytes, '\n'))
 	}
 }

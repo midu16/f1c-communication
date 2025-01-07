@@ -1,0 +1,113 @@
+F1AP DEFINITIONS AUTOMATIC TAGS ::= BEGIN
+
+-- Constants
+maxProtocolIEs INTEGER ::= 256
+
+-- Top-level message types
+F1AP-PDU ::= CHOICE {
+    initiatingMessage    InitiatingMessage,
+    successfulOutcome    SuccessfulOutcome,
+    unsuccessfulOutcome  UnsuccessfulOutcome
+}
+
+InitiatingMessage ::= SEQUENCE {
+    procedureCode        INTEGER,
+    criticality          ENUMERATED {reject, ignore, notify},
+    value                CHOICE {
+        f1SetupRequest       F1SetupRequest,
+        f1ReleaseRequest     F1ReleaseRequest,
+        f1HandoverRequest    F1HandoverRequest
+    }
+}
+
+SuccessfulOutcome ::= SEQUENCE {
+    procedureCode        INTEGER,
+    criticality          ENUMERATED {reject, ignore, notify},
+    value                CHOICE {
+        f1SetupResponse      F1SetupResponse,
+        f1ReleaseResponse    F1ReleaseResponse,
+        f1HandoverResponse   F1HandoverResponse
+    }
+}
+
+UnsuccessfulOutcome ::= SEQUENCE {
+    procedureCode        INTEGER,
+    criticality          ENUMERATED {reject, ignore, notify},
+    value                CHOICE {
+        f1SetupFailure       F1SetupFailure,
+        f1HandoverFailure    F1HandoverFailure
+    }
+}
+
+-- F1 Setup Request
+F1SetupRequest ::= SEQUENCE {
+    transactionID         INTEGER,
+    gNB-ID                BIT STRING (SIZE(22)),
+    gNB-Name              OCTET STRING (SIZE(1..150)) OPTIONAL,
+    cells-to-be-activated ProtocolIE-Container OPTIONAL
+}
+
+-- F1 Setup Response
+F1SetupResponse ::= SEQUENCE {
+    transactionID         INTEGER,
+    gNB-CU-ID             BIT STRING (SIZE(22)),
+    gNB-DU-ID             BIT STRING (SIZE(22)),
+    gNB-Name              OCTET STRING (SIZE(1..150)) OPTIONAL,
+    activated-cells       ProtocolIE-Container OPTIONAL
+}
+
+-- F1 Setup Failure
+F1SetupFailure ::= SEQUENCE {
+    transactionID         INTEGER,
+    cause                 ENUMERATED {unspecified, overload, invalidID},
+    timeToWait            ENUMERATED {vshort, short, medium, long} OPTIONAL
+}
+
+-- F1 Release Request
+F1ReleaseRequest ::= SEQUENCE {
+    transactionID         INTEGER,
+    gNB-ID                BIT STRING (SIZE(22))
+}
+
+-- F1 Release Response
+F1ReleaseResponse ::= SEQUENCE {
+    transactionID         INTEGER,
+    result                ENUMERATED {success, failure}
+}
+
+-- F1 Handover Request
+F1HandoverRequest ::= SEQUENCE {
+    transactionID         INTEGER,
+    sourceCellID          BIT STRING (SIZE(28)),
+    targetCellID          BIT STRING (SIZE(28)),
+    handoverType          ENUMERATED {intra-freq, inter-freq, inter-rat}
+}
+
+-- F1 Handover Response
+F1HandoverResponse ::= SEQUENCE {
+    transactionID         INTEGER,
+    targetCellID          BIT STRING (SIZE(28)),
+    status                ENUMERATED {success, partial, failure}
+}
+
+-- F1 Handover Failure
+F1HandoverFailure ::= SEQUENCE {
+    transactionID         INTEGER,
+    cause                 ENUMERATED {resource-unavailable, time-out, unknown, other}
+}
+
+-- Protocol IE container (Generic Container)
+ProtocolIE-Container ::= SEQUENCE (SIZE(0..maxProtocolIEs)) OF ProtocolIE-Field
+
+ProtocolIE-Field ::= SEQUENCE {
+    id                   INTEGER,
+    criticality          ENUMERATED {reject, ignore, notify},
+    value                CHOICE {
+        gNB-ID              BIT STRING (SIZE(22)),
+        cellID              BIT STRING (SIZE(28)),
+        transactionID       INTEGER,
+        ...
+    }
+}
+
+END

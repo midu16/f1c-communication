@@ -2,42 +2,39 @@
 
 ## Scope
 
-The scope of this repo its to implement the F1-C Interface communication based on `3GPP TS 38.473` standard.
+The scope of this repo its to implement the F1-C Interface communication based on [3GPP TS 38.473](https://www.etsi.org/deliver/etsi_ts/138400_138499/138473/15.08.00_60/ts_138473v150800p.pdf) standard.
+
+The functions of F1 Application Protocol (F1-AP) are described in [3GPP TS 38.470](https://www.etsi.org/deliver/etsi_ts/138400_138499/138470/16.02.00_60/ts_138470v160200p.pdf)
 
 ![Figure 1: F1 Interface](./images/figure1.png)
 
 
 - [F1-Control Plane 3GPP](#f1-control-plane-3gpp)
   - [Scope](#scope)
+  - [Features](#features)
   - [Client side](#client-side)
   - [Server side](#server-side)
   - [`tcpdump` package flow](#tcpdump-package-flow)
 
 
+## Features
+- SCTP-based communication
+- F1SetupRequest and F1SetupResponse handling
+- Flexible deployment with Docker
+
 ## Client side
 ```bash
 $ go run cmd/cu/main.go -server=192.168.1.20:38473
-2025/01/07 00:34:37 Starting CU client, connecting to server at 192.168.1.20:38473...
-Connected to DU server at 192.168.1.20:38473
-Received response: {MessageType:Response Payload:Acknowledged: Hello DU 1}
-Received response: {MessageType:Response Payload:Acknowledged: Hello DU 2}
-Received response: {MessageType:Response Payload:Acknowledged: Hello DU 3}
-Received response: {MessageType:Response Payload:Acknowledged: Hello DU 4}
-Received response: {MessageType:Response Payload:Acknowledged: Hello DU 5}
+2025/01/07 09:04:12 Connected to server: 192.168.1.20:38473
+2025/01/07 09:04:12 Received from server: Acknowledged
 ```
 
 ## Server side
 ```bash
 $ go run cmd/du/main.go
-2025/01/07 00:25:28 Starting DU server...
-DU Server listening on :38473
-Client connected: 192.168.1.22:60446
-Received message: {MessageType:Request Payload:Hello DU 1}
-Received message: {MessageType:Request Payload:Hello DU 2}
-Received message: {MessageType:Request Payload:Hello DU 3}
-Received message: {MessageType:Request Payload:Hello DU 4}
-Received message: {MessageType:Request Payload:Hello DU 5}
-Connection closed by client: EOF
+SCTP server listening on port :38473
+Received: Hello from CU!
+2025/01/07 09:08:14 Connection closed by client
 ```
 
 ## `tcpdump` package flow
@@ -46,69 +43,38 @@ Connection closed by client: EOF
 $ sudo tcpdump -i eth0 port 38473 -A
 tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
 listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
-00:43:07.273212 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [S], seq 1777628751, win 64240, options [mss 1460,sackOK,TS val 2296879123 ecr 0,nop,wscale 10], length 0
-E..<e.@.@.Q..........z.Ii.vO...................
-...........
-
-00:43:07.273399 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [S.], seq 2336203699, ack 1777628752, win 65160, options [mss 1460,sackOK,TS val 4273157428 ecr 2296879123,nop,wscale 7], length 0
-E..<..@.@..A.........I.z.?..i.vP...............
-..54........
-00:43:07.273425 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [.], ack 1, win 63, options [nop,nop,TS val 2296879123 ecr 4273157428], length 0
-E..4e.@.@.Q..........z.Ii.vP.?.....?.......
-......54
-00:43:07.273516 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [P.], seq 1:51, ack 1, win 63, options [nop,nop,TS val 2296879123 ecr 4273157428], length 50
-E..fe.@.@.Q..........z.Ii.vP.?.....?.......
-......54{"message_type":"Request","payload":"Hello DU 1"}
-
-00:43:07.273680 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [.], ack 51, win 509, options [nop,nop,TS val 4273157428 ecr 2296879123], length 0
-E..4.8@.@.0..........I.z.?..i.v.....E3.....
-..54....
-00:43:07.273795 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [P.], seq 1:66, ack 51, win 509, options [nop,nop,TS val 4273157428 ecr 2296879123], length 65
-E..u.9@.@./..........I.z.?..i.v............
-..54....{"message_type":"Response","payload":"Acknowledged: Hello DU 1"}
-
-00:43:07.273802 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [.], ack 66, win 63, options [nop,nop,TS val 2296879124 ecr 4273157428], length 0
-E..4e.@.@.Q..........z.Ii.v..?.....?.......
-......54
-00:43:07.273843 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [P.], seq 51:101, ack 66, win 63, options [nop,nop,TS val 2296879124 ecr 4273157428], length 50
-E..fe.@.@.Q..........z.Ii.v..?.....?.......
-......54{"message_type":"Request","payload":"Hello DU 2"}
-
-00:43:07.274008 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [P.], seq 66:131, ack 101, win 509, options [nop,nop,TS val 4273157428 ecr 2296879124], length 65
-E..u.:@.@./..........I.z.?..i.v............
-..54....{"message_type":"Response","payload":"Acknowledged: Hello DU 2"}
-
-00:43:07.274031 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [P.], seq 101:151, ack 131, win 63, options [nop,nop,TS val 2296879124 ecr 4273157428], length 50
-E..fe.@.@.Q..........z.Ii.v..?.6...?.......
-......54{"message_type":"Request","payload":"Hello DU 3"}
-
-00:43:07.274235 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [P.], seq 131:196, ack 151, win 509, options [nop,nop,TS val 4273157428 ecr 2296879124], length 65
-E..u.;@.@./..........I.z.?.6i.v......4.....
-..54....{"message_type":"Response","payload":"Acknowledged: Hello DU 3"}
-
-00:43:07.274254 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [P.], seq 151:201, ack 196, win 63, options [nop,nop,TS val 2296879124 ecr 4273157428], length 50
-E..fe.@.@.Q..........z.Ii.v..?.w...?.......
-......54{"message_type":"Request","payload":"Hello DU 4"}
-
-00:43:07.274458 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [P.], seq 196:261, ack 201, win 509, options [nop,nop,TS val 4273157429 ecr 2296879124], length 65
-E..u.<@.@./..........I.z.?.wi.w............
-..55....{"message_type":"Response","payload":"Acknowledged: Hello DU 4"}
-
-00:43:07.274476 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [P.], seq 201:251, ack 261, win 63, options [nop,nop,TS val 2296879124 ecr 4273157429], length 50
-E..fe.@.@.Q..........z.Ii.w..?.....?.......
-......55{"message_type":"Request","payload":"Hello DU 5"}
-
-00:43:07.274674 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [P.], seq 261:326, ack 251, win 509, options [nop,nop,TS val 4273157429 ecr 2296879124], length 65
-E..u.=@.@./..........I.z.?..i.wJ.....K.....
-..55....{"message_type":"Response","payload":"Acknowledged: Hello DU 5"}
-
-00:43:07.274698 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [F.], seq 251, ack 326, win 63, options [nop,nop,TS val 2296879125 ecr 4273157429], length 0
-E..4e.@.@.Q..........z.Ii.wJ.?.....?.......
-......55
-00:43:07.274890 IP 192.168.1.20.38473 > 192.168.1.22.45434: Flags [F.], seq 326, ack 252, win 509, options [nop,nop,TS val 4273157429 ecr 2296879125], length 0
-E..4.>@.@.0..........I.z.?..i.wK....C!.....
-..55....
-00:43:07.274901 IP 192.168.1.22.45434 > 192.168.1.20.38473: Flags [.], ack 327, win 63, options [nop,nop,TS val 2296879125 ecr 4273157429], length 0
-E..4e.@.@.Q..........z.Ii.wK.?.....?.......
-......55
+09:04:12.944238 IP 192.168.1.22.40515 > 192.168.1.20.38473: sctp (1) [INIT] [init tag: 293108771] [rwnd: 106496] [OS: 65535] [MIS: 65535] [init TSN: 3299268950]
+E..T..@.@............C.I.....?.....4.x|#...........V............
+X..................
+09:04:12.946488 IP 192.168.1.20.38473 > 192.168.1.22.40515: sctp (1) [INIT ACK] [init tag: 3798204170] [rwnd: 106496] [OS: 65535] [MIS: 65535] [init TSN: 2584174578]
+E..D..@.@............I.C.x|#{%m....$.c.
+.........._...... B<..b..i...jKP....................
+.c.#|x.........n.:.tZ......._.....C........................I..........$:/<Z.OP.Rd.).,.Z....k....$.@s.e............................................4.x|#...........V............
+X......................................................
+09:04:12.947028 IP 192.168.1.22.40515 > 192.168.1.20.38473: sctp (1) [COOKIE ECHO]
+E..(..@.@............C.I.c.
+$l.G
+.... B<..b..i...jKP....................
+.c.#|x.........n.:.tZ......._.....C........................I..........$:/<Z.OP.Rd.).,.Z....k....$.@s.e............................................4.x|#...........V............
+X..............................................
+09:04:12.948514 IP 192.168.1.20.38473 > 192.168.1.22.40515: sctp (1) [COOKIE ACK]
+E..$..@.@............I.C.x|#.'................
+09:04:12.948717 IP 192.168.1.22.40515 > 192.168.1.20.38473: sctp (1) [DATA] (B)(E) [TSN: 3299268950] [SID: 0] [SSEQ 0] [PPID 0x0]
+E..@..@.@............C.I.c.
+...........V........Hello from CU!..
+09:04:12.948921 IP 192.168.1.20.38473 > 192.168.1.22.40515: sctp (1) [SACK] [cum ack 3299268950] [a_rwnd 106482] [#gap acks 0] [#dup tsns 0]
+E..0..@.@............I.C.x|#dO6P.......V........
+09:04:12.948944 IP 192.168.1.20.38473 > 192.168.1.22.40515: sctp (1) [DATA] (B)(E) [TSN: 2584174578] [SID: 0] [SSEQ 0] [PPID 0x0]
+E..<..@.@............I.C.x|#...$......_.........Acknowledged
+09:04:12.948955 IP 192.168.1.22.40515 > 192.168.1.20.38473: sctp (1) [SACK] [cum ack 2584174578] [a_rwnd 106484] [#gap acks 0] [#dup tsns 0]
+E..0..@.@............C.I.c.
+.fo......._.........
+09:04:12.948989 IP 192.168.1.22.40515 > 192.168.1.20.38473: sctp (1) [SHUTDOWN]
+E..(..@.@............C.I.c.
+..`......._.
+09:04:12.949132 IP 192.168.1.20.38473 > 192.168.1.22.40515: sctp (1) [SHUTDOWN ACK]
+E..$..@.@............I.C.x|#..................
+09:04:12.949154 IP 192.168.1.22.40515 > 192.168.1.20.38473: sctp (1) [SHUTDOWN COMPLETE]
+E..$..@.@............C.I.c.
+...>....
 ```

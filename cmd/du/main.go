@@ -1,14 +1,13 @@
 package main
 
 import (
-	"f1c-communication/pkg/f1c"
+	"f1c-communication/pkg/f1ap"
 	"log"
 )
 
 func main() {
-	log.Println("Starting DU server...")
-	if err := f1c.StartServer(":38473"); err != nil {
-		log.Fatalf("Failed to start DU server: %v", err)
+	log.Println("Starting SCTP server on port :38473...")
+	if err := f1ap.StartServer(":38473"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }
-
