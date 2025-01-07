@@ -13,7 +13,7 @@ RUN go mod tidy
 # Step 5: Copy the source code into the container
 COPY . .
 
-# Step 6: Build the Go app
+# Step 6: Build the Go app with specific configurations (ensure CGO_ENABLED is set appropriately)
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o f1c-communication .
 
 # Step 7: Use a smaller base image for running the app
