@@ -1,25 +1,20 @@
 package unit
 
 import (
-	"testing"
-	"time"
-
 	"f1c-communication/pkg/transport"
+	"testing"
 )
 
-func TestClientServerInteraction(t *testing.T) {
-	go func() {
-		err := transport.StartServer(":38473")
-		if err != nil {
-			t.Fatalf("Server failed to start: %v", err)
-		}
-	}()
-
-	// Allow server to start
-	time.Sleep(1 * time.Second)
-
-	err := transport.StartClient("127.0.0.1:38473")
+func TestStartServer(t *testing.T) {
+	err := transport.StartServer()
 	if err != nil {
-		t.Fatalf("Client failed to connect: %v", err)
+		t.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+func TestStartClient(t *testing.T) {
+	err := transport.StartClient()
+	if err != nil {
+		t.Fatalf("Failed to start client: %v", err)
 	}
 }

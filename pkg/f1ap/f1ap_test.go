@@ -8,6 +8,8 @@ func TestEncodeDecodeF1SetupRequest(t *testing.T) {
 	req := F1SetupRequest{
 		TransactionID: 1234,
 		GlobalCUId:    "TestCU",
+		GNBID:         "GNB123",
+		GNBName:       "TestGNB",
 	}
 
 	encoded, err := EncodeF1SetupRequest(req)
@@ -21,7 +23,8 @@ func TestEncodeDecodeF1SetupRequest(t *testing.T) {
 		t.Fatalf("Failed to decode F1SetupRequest: %v", err)
 	}
 
-	if decoded.TransactionID != req.TransactionID || decoded.GlobalCUId != req.GlobalCUId {
+	if decoded.TransactionID != req.TransactionID || decoded.GlobalCUId != req.GlobalCUId ||
+		decoded.GNBID != req.GNBID || decoded.GNBName != req.GNBName {
 		t.Errorf("Mismatch in decoded F1SetupRequest: got %+v, want %+v", decoded, req)
 	}
 }
