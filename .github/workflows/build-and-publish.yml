@@ -1,0 +1,48 @@
+name: Build and Publish Go Binaries to GitHub Packages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.18'
+
+    - name: Build f1c-du
+      run: go build -o f1c-du -v cmd/du/main.go
+
+    - name: Build f1c-cu
+      run: go build -o f1c-cu -v cmd/cu/main.go
+
+    # Publish f1c-du to GitHub Packages
+    - name: Publish f1c-du to GitHub Packages
+      run: |
+        echo "Publishing f1c-du to GitHub Packages"
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data-binary @./f1c-du \
+          https://uploads.github.com/repos/${{ github.repository }}/releases/${{ github.ref }}/assets?name=f1c-du
+
+    # Publish f1c-cu to GitHub Packages
+    - name: Publish f1c-cu to GitHub Packages
+      run: |
+        echo "Publishing f1c-cu to GitHub Packages"
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          --data-binary @./f1c-cu \
+          https://uploads.github.com/repos/${{ github.repository }}/releases/${{ github.ref }}/assets?name=f1c-cu
